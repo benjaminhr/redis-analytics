@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+var wsPort = flag.Int("wsport", 8080, "Websocket server port")
 var redisHost = flag.String("h", "127.0.0.1", "Redis host")
 var redisPort = flag.Int("p", 6379, "Redis port number")
 var redisPassword = flag.String("pass", "", "Redis password")
@@ -49,24 +50,26 @@ func main() {
 		}
 	}()
 
-	http.HandleFunc("/browsers", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		clients[conn] = true
-
-		browsers := strconv.Itoa(subCount)
-		err = conn.WriteMessage(websocket.TextMessage, []byte(browsers))
-		if err != nil {
-			log.Printf("Error sending WS message: %s", err)
-		}
-	})
+	http.HandleFunc("/browsers", wsHandler)
 
 	fmt.Println("Starting WS server...")
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(*wsPort), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
+	}
+}
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	clients[conn] = true
+
+	browsers := strconv.Itoa(subCount)
+	err = conn.WriteMessage(websocket.TextMessage, []byte(browsers))
+	if err != nil {
+		log.Printf("Error sending WS message: %s", err)
 	}
 }
 
