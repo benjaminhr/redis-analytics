@@ -1,6 +1,6 @@
-# Redis Analytics
+# rallytics
 
-Usage: `./wss -h 127.0.0.1 -p 6379 -db 0 -chan browsers -wsport=8080`
+Usage: `./rallytics [options, see below]`
 
 All flags are optional:
 - `-h` host
@@ -13,9 +13,12 @@ All flags are optional:
   - Default value: 0
 - `-chan` Channel to listen to
   - Default value: browsers
-- `-wsport`Websocket server port number
+- `-wsport` Websocket server port number
   - Default value: 8080
 
-To recompile `go build -o wss .`
+## testing
 
-**Note:** Accepts all WS connections from all origins
+    docker-compose up --build --force-recreate --scale rallytics=3
+    # (or be awesome and use https://github.com/matti/doc)
+
+    open http://rallytics.localtest.me

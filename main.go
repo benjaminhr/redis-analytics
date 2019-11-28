@@ -67,6 +67,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 
 	browsers := strconv.Itoa(subCount)
+
 	err = conn.WriteMessage(websocket.TextMessage, []byte(browsers))
 	if err != nil {
 		log.Printf("Error sending WS message: %s", err)

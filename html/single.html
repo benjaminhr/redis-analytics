@@ -1,0 +1,22 @@
+<h1 id="rallytics"></h1>
+<script>
+  let socket = new WebSocket("ws://rallytics-ws.localtest.me/browsers");
+
+  socket.onopen = function (e) {
+    console.log("open", e);
+  };
+
+  socket.onmessage = function (e) {
+    console.log("message", e);
+    rallytics.textContent = e.data
+  };
+
+  socket.onclose = function (e) {
+    console.log("close", e);
+  };
+
+  socket.onerror = function (err) {
+    console.log("error", err);
+  };
+
+</script>
