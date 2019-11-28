@@ -18,12 +18,6 @@ var redisPassword = flag.String("pass", "", "Redis password")
 var redisDBIndex = flag.Int("db", 0, "Redis DB index")
 var channelName = flag.String("chan", "browsers", "Redis channel name")
 
-var redisClient = redis.NewClient(&redis.Options{
-	Addr:     *redisHost + ":" + strconv.Itoa(*redisPort),
-	Password: *redisPassword,
-	DB:       *redisDBIndex,
-})
-
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -38,9 +32,18 @@ var subCount = 0
 func main() {
 	flag.Parse()
 
-	go func() {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     *redisHost + ":" + strconv.Itoa(*redisPort),
+		Password: *redisPassword,
+		DB:       *redisDBIndex,
+	})
+
+	go func(redisClient *redis.Client) {
 		for {
-			pubSubNum, _ := redisClient.PubSubNumSub(*channelName).Result()
+			pubSubNum, err := redisClient.PubSubNumSub(*channelName).Result()
+			if err != nil {
+				fmt.Println("ERROR", err)
+			}
 			newSubCount := int(pubSubNum[*channelName])
 			if newSubCount != subCount {
 				subCount = newSubCount
@@ -48,7 +51,7 @@ func main() {
 			}
 			time.Sleep(1 * time.Second)
 		}
-	}()
+	}(redisClient)
 
 	http.HandleFunc("/browsers", wsHandler)
 
