@@ -66,12 +66,9 @@ func pollRedis() {
 
 func pollDeadClients() {
 	for {
-		for wClient, rClient := range clients {
+		for wClient, redisSub := range clients {
 			if err := wClient.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-				err = rClient.Unsubscribe(*channelName)
-				logError(err)
-				wClient.Close()
-				delete(clients, wClient)
+				removeClient(redisSub, wClient)
 			}
 		}
 
@@ -82,18 +79,24 @@ func pollDeadClients() {
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	logFatalError(err)
-
 	clients[conn] = redisClient.Subscribe(*channelName)
-	browsers := strconv.Itoa(subCount)
-	err = conn.WriteMessage(websocket.TextMessage, []byte(browsers))
-	logError(err)
 }
 
 func broadcast() {
-	for client := range clients {
+	for wClient, redisSub := range clients {
 		browsers := strconv.Itoa(subCount)
-		client.WriteMessage(websocket.TextMessage, []byte(browsers))
+		err := wClient.WriteMessage(websocket.TextMessage, []byte(browsers))
+		if err != nil {
+			removeClient(redisSub, wClient)
+		}
 	}
+}
+
+func removeClient(redisSub *redis.PubSub, wClient *websocket.Conn) {
+	err := redisSub.Unsubscribe(*channelName)
+	logError(err)
+	wClient.Close()
+	delete(clients, wClient)
 }
 
 func logError(err error) {
